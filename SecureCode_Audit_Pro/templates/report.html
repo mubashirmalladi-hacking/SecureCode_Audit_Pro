@@ -1,0 +1,61 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Security Assessment Report</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+<main class="report-page">
+    <div class="report-toolbar">
+        <a class="button secondary" href="{{ url_for('dashboard') }}">← Dashboard</a>
+        <button class="button primary" onclick="window.print()">Print / Save PDF</button>
+    </div>
+    <p class="eyebrow">APPLICATION SECURITY ASSESSMENT</p>
+    <h1>Source Code Review<span>.</span></h1>
+    <p class="muted">Automated static analysis report for manual review.</p>
+
+    <section class="metrics report-metrics">
+        <article class="metric"><span>Total findings</span><strong>{{ result.total }}</strong></article>
+        <article class="metric"><span>High</span><strong class="high">{{ result.counts.HIGH }}</strong></article>
+        <article class="metric"><span>Medium</span><strong class="medium">{{ result.counts.MEDIUM }}</strong></article>
+        <article class="metric"><span>Low</span><strong class="low">{{ result.counts.LOW }}</strong></article>
+    </section>
+
+    <section class="panel">
+        <p><b>File:</b> {{ result.filename }}</p>
+        <p><b>Scanner:</b> {{ result.scanner }}</p>
+        <p><b>Scan date:</b> {{ result.created_at }}</p>
+        <h2>Detailed findings</h2>
+
+        {% for f in result.findings %}
+        <article class="report-finding">
+            <span class="severity {{ f.severity|lower }}">{{ f.severity }}</span>
+            <code>{{ f.test_id }}</code>
+            <h3>{{ f.test_name }}</h3>
+            <p>{{ f.issue_text }}</p>
+            <p><b>Location:</b> {{ f.filename }} · Line {{ f.line }}</p>
+            {% if f.code %}<pre>{{ f.code }}</pre>{% endif %}
+            <p><b>Recommendation:</b> Review the code in context, apply the appropriate secure coding fix, and verify the correction with tests and a follow-up scan.</p>
+        </article>
+        {% else %}
+        <p>No findings were returned. This does not guarantee that the code is secure.</p>
+        {% endfor %}
+    </section>
+
+    <section class="panel report-section">
+        <h2>Scope and limitations</h2>
+        <p class="muted">This report summarizes Bandit static analysis of a Python source file. Results can contain false positives and may miss issues. Manual validation and additional testing are required.</p>
+        <h3>Recommended next steps</h3>
+        <ul>
+            <li>Validate the findings.</li>
+            <li>Fix confirmed security issues.</li>
+            <li>Run regression tests and rescan the corrected source.</li>
+            <li>Review dependencies and deployment configuration.</li>
+        </ul>
+    </section>
+</main>
+</body>
+</html>

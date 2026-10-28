@@ -1,0 +1,168 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecureCode Audit Pro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+<div class="app">
+    <aside class="sidebar">
+        <div class="brand"><span class="logo">S+</span>
+            <div><strong>SecureCode</strong><small>AUDIT PRO</small></div>
+        </div>
+        <p class="nav-label">WORKSPACE</p>
+        <a class="nav active" href="/">▦ &nbsp; Overview</a>
+        <a class="nav" href="#findings">⌕ &nbsp; Security findings</a>
+        <div class="sidebar-bottom">
+            <span class="online-dot"></span> Local analysis
+            <p>Your source code is analyzed locally.</p>
+        </div>
+    </aside>
+
+    <main class="main">
+        <header class="topbar">
+            <span>Workspace / <b>Security overview</b></span>
+            <span class="pill"><span class="online-dot"></span> LOCAL ENVIRONMENT</span>
+        </header>
+
+        <section class="heading">
+            <div>
+                <p class="eyebrow">APPLICATION SECURITY · TASK 03</p>
+                <h1>Security overview<span>.</span></h1>
+                <p class="muted">Analyze source code, identify weaknesses, and review security findings.</p>
+            </div>
+            <form action="{{ url_for('scan_sample') }}" method="post">
+                <button class="button secondary">Scan demo sample →</button>
+            </form>
+        </section>
+
+        {% for category, message in get_flashed_messages(with_categories=true) %}
+        <div class="notice {{ category }}">{{ message }}</div>
+        {% endfor %}
+
+        <section class="metrics">
+            <article class="metric featured">
+                <span>Total findings</span>
+                <strong>{{ result.total if result else '—' }}</strong>
+                <small>Latest scan</small>
+            </article>
+            <article class="metric">
+                <span>High severity</span>
+                <strong class="high">{{ result.counts.HIGH if result else '—' }}</strong>
+                <small>Priority review</small>
+            </article>
+            <article class="metric">
+                <span>Medium severity</span>
+                <strong class="medium">{{ result.counts.MEDIUM if result else '—' }}</strong>
+                <small>Review recommended</small>
+            </article>
+            <article class="metric">
+                <span>Low severity</span>
+                <strong class="low">{{ result.counts.LOW if result else '—' }}</strong>
+                <small>Hardening opportunities</small>
+            </article>
+        </section>
+
+        <section class="content-grid">
+            <article class="panel">
+                <p class="eyebrow">NEW ANALYSIS</p>
+                <h2>Scan source code</h2>
+                <p class="muted">Upload a Python file to run static security analysis.</p>
+
+                <form action="{{ url_for('scan_source') }}" method="post"
+                      enctype="multipart/form-data">
+                    <label class="upload" for="source_file">
+                        <span class="upload-icon">↑</span>
+                        <strong id="file-label">Choose a Python source file</strong>
+                        <small>Python files only · Maximum 512 KB</small>
+                        <span class="accent">Browse files</span>
+                        <input id="source_file" type="file" name="source_file"
+                               accept=".py" required>
+                    </label>
+                    <p class="muted small">Uploaded source is analyzed, never executed.</p>
+                    <button class="button primary full">Run security scan →</button>
+                </form>
+
+                <div class="scanner">
+                    <span class="scanner-icon">B</span>
+                    <div><b>Powered by Bandit</b><small>Python static analysis</small></div>
+                    <span class="pill">SAST</span>
+                </div>
+            </article>
+
+            <article class="panel">
+                <p class="eyebrow">ASSESSMENT METHOD</p>
+                <h2>How it works</h2>
+                <div class="step"><span>01</span><div><b>Inspect source</b><p>Read the selected Python file.</p></div></div>
+                <div class="step"><span>02</span><div><b>Analyze patterns</b><p>Run Bandit security checks.</p></div></div>
+                <div class="step"><span>03</span><div><b>Review findings</b><p>Inspect severity and source lines.</p></div></div>
+                <div class="step"><span>04</span><div><b>Document results</b><p>Export a security report.</p></div></div>
+            </article>
+        </section>
+
+        <section class="panel findings" id="findings">
+            <div class="findings-heading">
+                <div>
+                    <p class="eyebrow">SCAN OUTPUT</p>
+                    <h2>Security findings <span class="count">{{ result.total if result else 0 }}</span></h2>
+                    <p class="muted">
+                        {% if result %}
+                        {{ result.filename }} · {{ result.created_at }}
+                        {% else %}
+                        Run a scan to see results here.
+                        {% endif %}
+                    </p>
+                </div>
+                {% if result %}
+                <div class="actions">
+                    <a class="button secondary" href="{{ url_for('report') }}">View report</a>
+                    <a class="button primary" href="{{ url_for('export_json') }}">Export JSON</a>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if result and result.findings %}
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>FINDING</th><th>RULE</th><th>LOCATION</th><th>SEVERITY</th><th>CONFIDENCE</th></tr></thead>
+                    <tbody>
+                    {% for f in result.findings %}
+                    <tr>
+                        <td><b>{{ f.test_name }}</b><p class="muted">{{ f.issue_text }}</p>
+                            {% if f.code %}<code>{{ f.code }}</code>{% endif %}
+                        </td>
+                        <td>{{ f.test_id }}</td>
+                        <td>{{ f.filename }}<small>Line {{ f.line }}</small></td>
+                        <td><span class="severity {{ f.severity|lower }}">{{ f.severity }}</span></td>
+                        <td>{{ f.confidence|title }}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% elif result %}
+            <div class="empty"><b>No findings returned by this scan.</b>
+                <p>A clean scan does not prove that code is secure.</p></div>
+            {% else %}
+            <div class="empty"><b>No scan results yet</b>
+                <p>Run the demo sample or upload a Python file to get started.</p></div>
+            {% endif %}
+            <div class="disclaimer">Static analysis results require manual validation. Findings are not automatically confirmed vulnerabilities.</div>
+        </section>
+
+        <footer>SECURECODE AUDIT PRO · TASK 3 <span>Authorized source-code review</span></footer>
+    </main>
+</div>
+<script>
+const fileInput = document.getElementById("source_file");
+fileInput.addEventListener("change", () => {
+    if (fileInput.files.length) {
+        document.getElementById("file-label").textContent = fileInput.files[0].name;
+    }
+});
+</script>
+</body>
+</html>
